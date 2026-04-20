@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="sql-wasm.js"></script>
+</head>
+<body>
+    <script>
+        function loadFromIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open("AccountingDB", 1);
+                request.onupgradeneeded = function(event) {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains("sqlite")) {
+                        db.createObjectStore("sqlite");
+                    }
+                };
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+                    const tx = db.transaction("sqlite", "readonly");
+                    const store = tx.objectStore("sqlite");
+                    const getReq = store.get("db_file");
+                    getReq.onsuccess = function() {
+                        resolve(getReq.result);
+                    };
+                    getReq.onerror = function() { reject(getReq.error); };
+                };
+                request.onerror = function(event) { reject(event.target.error); };
+            });
+        }
+
+        function saveToIndexedDB(buffer) {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open("AccountingDB", 1);
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+                    const tx = db.transaction("sqlite", "readwrite");
+                    const store = tx.objectStore("sqlite");
+                    const putReq = store.put(buffer, "db_file");
+                    putReq.onsuccess = function() { resolve(); };
+                    putReq.onerror = function() { reject(putReq.error); };
+                };
+                request.onerror = function(event) { reject(event.target.error); };
+            });
+        }
+
+        window['ai_edge_gallery_get_result'] = async (dataStr) => {
+            try {
+                const payload = JSON.parse(dataStr);
+                
+                // Initialize sql.js using local files
+                const SQL = await initSqlJs({
+                    locateFile: file => file // loads sql-wasm.wasm relative to index.html
+                });
+                
+                const savedDb = await loadFromIndexedDB();
+                let db;
+                if (savedDb) {
+                    db = new SQL.Database(savedDb);
+                } else {
+                    db = new SQL.Database();
+                    // Create tables with items tracked
+                    db.run("CREATE TABLE receipts (id INTEGER PRIMARY KEY, vendor TEXT, total REAL, date TEXT, items TEXT);");
+                }
+                
+                const vendor = payload.vendor || "Unknown Vendor";
+                const total = payload.total || 0;
+                const date = payload.date || new Date().toISOString().split('T')[0];
+                const items = JSON.stringify(payload.items || []);
+                
+                db.run("INSERT INTO receipts (vendor, total, date, items) VALUES (?, ?, ?, ?)", [vendor, total, date, items]);
+                
+                // Export db state to IndexedDB
+                const data = db.export(); // returns Uint8Array
+                await saveToIndexedDB(data);
+                
+                const resultString = `Success! Saved receipt for ${vendor} ($${Number(total).toFixed(2)}) on ${date}.`;
+                
+                return JSON.stringify({
+                    result: resultString,
+                    webview: { url: "webview.html" }
+                });
+
+            } catch (e) {
+                console.error(e);
+                return JSON.stringify({ error: `Accounting DB Error: ${e.message}` });
+            }
+        };
+    </script>
+</body>
+</html>
