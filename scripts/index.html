@@ -63,6 +63,22 @@
                     db.run("CREATE TABLE receipts (id INTEGER PRIMARY KEY, vendor TEXT, total REAL, date TEXT, items TEXT);");
                 }
                 
+                if (payload.action === 'summary' || payload.action === 'view') {
+                    let count = 0, sum = 0;
+                    try {
+                        const results = db.exec("SELECT COUNT(*), SUM(total) FROM receipts");
+                        if (results.length > 0 && results[0].values.length > 0) {
+                            count = results[0].values[0][0] || 0;
+                            sum = results[0].values[0][1] || 0;
+                        }
+                    } catch(e) {}
+                    
+                    return JSON.stringify({
+                        result: `You have ${count} saved receipts totaling $${Number(sum).toFixed(2)}.`,
+                        webview: { url: "webview.html" }
+                    });
+                }
+
                 const vendor = payload.vendor || "Unknown Vendor";
                 const total = payload.total || 0;
                 const date = payload.date || new Date().toISOString().split('T')[0];

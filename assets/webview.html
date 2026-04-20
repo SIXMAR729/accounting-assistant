@@ -169,6 +169,124 @@
             0%, 100% { opacity: 0.5; }
             50% { opacity: 1; }
         }
+
+        .receipt-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 12px;
+        }
+
+        .btn-action {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-action:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-main);
+        }
+
+        .btn-edit:hover {
+            color: var(--primary);
+            border-color: var(--primary-glow);
+        }
+
+        .btn-delete:hover {
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
     </style>
 </head>
 <body>
@@ -184,6 +302,33 @@
 
     <div class="receipt-list" id="receipt-list">
         <div class="loading">Loading your records...</div>
+    </div>
+
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal-content">
+            <h2 style="margin: 0 0 20px 0; font-size: 18px;">Edit Receipt</h2>
+            <input type="hidden" id="edit-id">
+            <div class="form-group">
+                <label>Vendor</label>
+                <input type="text" id="edit-vendor">
+            </div>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="edit-date">
+            </div>
+            <div class="form-group">
+                <label>Total ($)</label>
+                <input type="number" step="0.01" id="edit-total">
+            </div>
+            <div class="form-group">
+                <label>Items (JSON format)</label>
+                <textarea id="edit-items" rows="4"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-action" onclick="closeEditModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveEdit()">Save Changes</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -212,11 +357,34 @@
             });
         }
 
+        function saveToIndexedDB(buffer) {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open("AccountingDB", 1);
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+                    const tx = db.transaction("sqlite", "readwrite");
+                    const store = tx.objectStore("sqlite");
+                    const putReq = store.put(buffer, "db_file");
+                    putReq.onsuccess = function() { resolve(); };
+                    putReq.onerror = function() { reject(putReq.error); };
+                };
+                request.onerror = function(event) { reject(event.target.error); };
+            });
+        }
+
+        let AppSQL = null;
+
+        async function getDatabase() {
+            if (!AppSQL) AppSQL = await initSqlJs({ locateFile: file => file });
+            const savedDb = await loadFromIndexedDB();
+            return new AppSQL.Database(savedDb || []);
+        }
+
         async function initDashboard() {
             try {
-                const SQL = await initSqlJs({
-                    locateFile: file => file // loads sql-wasm.wasm
-                });
+                if (!AppSQL) {
+                    AppSQL = await initSqlJs({ locateFile: file => file });
+                }
                 
                 const savedDb = await loadFromIndexedDB();
                 if (!savedDb) {
@@ -225,7 +393,7 @@
                     return;
                 }
                 
-                const db = new SQL.Database(savedDb);
+                const db = new AppSQL.Database(savedDb);
                 
                 // Read from DB
                 const results = db.exec("SELECT id, vendor, total, date, items FROM receipts ORDER BY date DESC, id DESC");
@@ -270,6 +438,11 @@
                         itemsHtml += `</div>`;
                     }
                     
+                    const id = row[columns.indexOf('id')];
+                    const encodedVendor = encodeURIComponent(vendor);
+                    const encodedDate = encodeURIComponent(date);
+                    const encodedItems = encodeURIComponent(row[columns.indexOf('items')]);
+
                     html += `
                         <div class="receipt-card" style="animation-delay: ${index * 0.08}s">
                             <div class="receipt-header">
@@ -280,6 +453,10 @@
                                 <div class="receipt-total">$${Number(total || 0).toFixed(2)}</div>
                             </div>
                             ${itemsHtml}
+                            <div class="receipt-actions">
+                                <button class="btn-action btn-edit" onclick="openEditModal(${id}, '${encodedVendor}', ${total || 0}, '${encodedDate}', '${encodedItems}')">Edit</button>
+                                <button class="btn-action btn-delete" onclick="deleteReceipt(${id})">Delete</button>
+                            </div>
                         </div>
                     `;
                 });
@@ -294,6 +471,63 @@
             }
         }
         
+        async function deleteReceipt(id) {
+            if (!confirm("Are you sure you want to delete this receipt?")) return;
+            try {
+                const db = await getDatabase();
+                db.run("DELETE FROM receipts WHERE id = ?", [id]);
+                await saveToIndexedDB(db.export());
+                initDashboard();
+            } catch(e) {
+                alert("Error deleting: " + e.message);
+            }
+        }
+
+        function openEditModal(id, vendorEnc, total, dateEnc, itemsEnc) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-vendor').value = decodeURIComponent(vendorEnc);
+            document.getElementById('edit-date').value = decodeURIComponent(dateEnc);
+            document.getElementById('edit-total').value = total;
+            
+            let itemsStr = decodeURIComponent(itemsEnc);
+            try {
+                const obj = JSON.parse(itemsStr);
+                itemsStr = JSON.stringify(obj, null, 2);
+            } catch(e) {}
+            
+            document.getElementById('edit-items').value = itemsStr;
+            document.getElementById('edit-modal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.remove('active');
+        }
+
+        async function saveEdit() {
+            const id = document.getElementById('edit-id').value;
+            const vendor = document.getElementById('edit-vendor').value;
+            const date = document.getElementById('edit-date').value;
+            const total = parseFloat(document.getElementById('edit-total').value) || 0;
+            const items = document.getElementById('edit-items').value || '[]';
+            
+            try {
+                JSON.parse(items);
+            } catch(e) {
+                alert("Invalid JSON in Items field.");
+                return;
+            }
+
+            try {
+                const db = await getDatabase();
+                db.run("UPDATE receipts SET vendor=?, date=?, total=?, items=? WHERE id=?", [vendor, date, total, items, id]);
+                await saveToIndexedDB(db.export());
+                closeEditModal();
+                initDashboard();
+            } catch(e) {
+                alert("Error updating: " + e.message);
+            }
+        }
+
         function escapeHtml(unsafe) {
             return (unsafe || '').toString()
                  .replace(/&/g, "&amp;")
