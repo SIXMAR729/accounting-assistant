@@ -1,7 +1,7 @@
 ---
 name: accounting-assistant
 description: An accounting assistant that analyzes images of receipts and invoices to extract line items, vendor, and amounts, saving them to your local database.
-version: 1.0.2
+version: 1.0.1
 homepage: https://github.com/SIXMAR729/accounting-assistant
 recommended_model: Gemma-4-E4B-it
 tags: [accounting-assistant, agentic, react-planning, tool-use, gog, gep-lite, capsule-sharing, meta-evolution, goal-alignment, memory-distillation]
