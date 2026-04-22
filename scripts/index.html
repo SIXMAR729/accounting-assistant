@@ -65,16 +65,40 @@
                 
                 if (payload.action === 'summary' || payload.action === 'view') {
                     let count = 0, sum = 0;
+                    let receiptDetails = [];
+
                     try {
-                        const results = db.exec("SELECT COUNT(*), SUM(total) FROM receipts");
-                        if (results.length > 0 && results[0].values.length > 0) {
-                            count = results[0].values[0][0] || 0;
-                            sum = results[0].values[0][1] || 0;
+                        const summaryResults = db.exec("SELECT COUNT(*), SUM(total) FROM receipts");
+                        if (summaryResults.length > 0 && summaryResults[0].values.length > 0) {
+                            count = summaryResults[0].values[0][0] || 0;
+                            sum = summaryResults[0].values[0][1] || 0;
                         }
-                    } catch(e) {}
-                    
+
+                        const detailResults = db.exec("SELECT vendor, total, date FROM receipts ORDER BY date DESC LIMIT 5");
+                        if (detailResults.length > 0) {
+                            const columns = detailResults[0].columns;
+                            detailResults[0].values.forEach(row => {
+                                receiptDetails.push({
+                                    vendor: row[columns.indexOf('vendor')],
+                                    total: row[columns.indexOf('total')],
+                                    date: row[columns.indexOf('date')]
+                                });
+                            });
+                        }
+                    } catch(e) {
+                        console.error("Error reading data:", e);
+                    }
+
+                    let resultString = `You have ${count} saved receipts totaling $${Number(sum).toFixed(2)}. `;
+                    if (receiptDetails.length > 0) {
+                        resultString += "Here are the recent entries: ";
+                        receiptDetails.forEach(item => {
+                            resultString += `${item.date} - ${item.vendor} ($${item.total}), `;
+                        });
+                    }
+
                     return JSON.stringify({
-                        result: `You have ${count} saved receipts totaling $${Number(sum).toFixed(2)}.`,
+                        result: resultString,
                         webview: { url: "webview.html" }
                     });
                 }
