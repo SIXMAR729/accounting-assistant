@@ -19,6 +19,33 @@
             --border: #334155;
             --danger: #ef4444;
             --success: #10b981;
+            --warning: #f59e0b;
+            --purple: #a78bfa;
+            --pink: #f472b6;
+            --teal: #2dd4bf;
+            --orange: #fb923c;
+            --chart-1: #3b82f6;
+            --chart-2: #a78bfa;
+            --chart-3: #2dd4bf;
+            --chart-4: #f59e0b;
+            --chart-5: #f472b6;
+            --chart-6: #fb923c;
+            --chart-7: #34d399;
+            --chart-8: #60a5fa;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --surface-raised: #f1f5f9;
+            --primary: #2563eb;
+            --primary-glow: rgba(37, 99, 235, 0.2);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --text-faint: #94a3b8;
+            --border: #e2e8f0;
+            --danger: #dc2626;
+            --success: #059669;
         }
 
         * { box-sizing: border-box; }
@@ -32,6 +59,7 @@
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
             overflow-y: auto;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         button, input, textarea, select { font-family: inherit; }
@@ -41,25 +69,57 @@
             outline-offset: 2px;
         }
 
+        /* ---------- Header ---------- */
+
         .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 20px;
-            text-align: center;
         }
 
-        .header h1 {
+        .header-left h1 {
             font-size: 26px;
             font-weight: 700;
-            margin: 0 0 8px 0;
+            margin: 0 0 2px 0;
             background: linear-gradient(135deg, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
+        .header-left p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-faint);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover { background: var(--surface-raised); color: var(--text-main); }
+        .icon-btn svg { width: 18px; height: 18px; }
+
         /* ---------- Stats ---------- */
 
         .stats-row {
             display: grid;
-            grid-template-columns: 1.4fr 1fr 1fr;
+            grid-template-columns: 1.4fr 1fr 1fr 1fr;
             gap: 12px;
             margin-bottom: 20px;
         }
@@ -91,7 +151,7 @@
 
         .total-card h2, .stat-card h2 {
             margin: 0;
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 1.2px;
             color: var(--text-muted);
@@ -99,7 +159,7 @@
         }
 
         .total-card .amount {
-            font-size: 40px;
+            font-size: 36px;
             font-weight: 700;
             margin: 10px 0 0 0;
             color: #fff;
@@ -107,10 +167,94 @@
             line-height: 1;
         }
 
+        [data-theme="light"] .total-card .amount { color: var(--text-main); text-shadow: none; }
+
         .stat-card .amount {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             margin: 8px 0 0 0;
+            color: var(--text-main);
+        }
+
+        .stat-card .stat-label {
+            font-size: 10px;
+            color: var(--text-faint);
+            margin-top: 2px;
+        }
+
+        /* ---------- Category breakdown bar ---------- */
+
+        .category-bar-section {
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+            animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .category-bar-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .category-bar-title h3 {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .category-bar-title .period-label {
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .category-bar {
+            display: flex;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.15);
+            margin-bottom: 12px;
+        }
+
+        [data-theme="light"] .category-bar { background: #e2e8f0; }
+
+        .category-segment {
+            transition: opacity 0.2s, transform 0.2s;
+            cursor: pointer;
+        }
+
+        .category-segment:hover { opacity: 0.8; transform: scaleY(1.15); }
+
+        .category-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .legend-amount {
+            font-weight: 600;
             color: var(--text-main);
         }
 
@@ -154,7 +298,7 @@
 
         #search-input::placeholder { color: var(--text-faint); }
 
-        #sort-select {
+        .filter-select {
             background: var(--surface-color);
             border: 1px solid var(--border);
             color: var(--text-main);
@@ -169,7 +313,7 @@
             padding-right: 30px;
         }
 
-        #sort-select:focus { outline: none; border-color: var(--primary); }
+        .filter-select:focus { outline: none; border-color: var(--primary); }
 
         .result-count {
             font-size: 12px;
@@ -238,14 +382,18 @@
             display: none;
         }
 
+        [data-theme="light"] .receipt-items { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.05); }
+
         .receipt-items.expanded { display: block; }
 
         .item-row {
             display: flex;
             justify-content: space-between;
             margin-bottom: 7px;
-            color: #cbd5e1;
+            color: var(--text-muted);
         }
+
+        [data-theme="light"] .item-row { color: var(--text-muted); }
 
         .item-row:last-child { margin-bottom: 0; }
 
@@ -267,17 +415,40 @@
             font-weight: 500;
             padding: 2px 8px;
             border-radius: 20px;
-            background: rgba(59, 130, 246, 0.12);
-            color: #93c5fd;
-            border: 1px solid rgba(59, 130, 246, 0.25);
             margin-top: 5px;
             letter-spacing: 0.3px;
         }
+
+        .cat-general { background: rgba(59, 130, 246, 0.12); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.25); }
+        .cat-food { background: rgba(251, 146, 60, 0.12); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.25); }
+        .cat-transport { background: rgba(45, 212, 191, 0.12); color: #2dd4bf; border: 1px solid rgba(45, 212, 191, 0.25); }
+        .cat-entertainment { background: rgba(244, 114, 182, 0.12); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.25); }
+        .cat-shopping { background: rgba(167, 139, 250, 0.12); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.25); }
+        .cat-bills { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+        .cat-health { background: rgba(52, 211, 153, 0.12); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.25); }
+        .cat-other { background: rgba(96, 165, 250, 0.12); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.25); }
 
         .state-message {
             text-align: center;
             padding: 48px 20px;
             color: var(--text-muted);
+        }
+
+        .state-message .state-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: var(--surface-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .state-message .state-icon svg {
+            width: 28px;
+            height: 28px;
+            color: var(--text-faint);
         }
 
         .state-message .state-title {
@@ -290,6 +461,9 @@
         .state-message .state-sub {
             font-size: 13px;
             color: var(--text-faint);
+            max-width: 280px;
+            margin: 0 auto;
+            line-height: 1.5;
         }
 
         .state-message.error .state-title { color: var(--danger); }
@@ -325,6 +499,8 @@
             padding-top: 12px;
         }
 
+        [data-theme="light"] .receipt-actions { border-top-color: var(--border); }
+
         .btn-action {
             background: rgba(255,255,255,0.05);
             border: 1px solid var(--border);
@@ -336,6 +512,8 @@
             transition: all 0.2s;
             font-family: inherit;
         }
+
+        [data-theme="light"] .btn-action { background: var(--surface-raised); }
 
         .btn-action:hover {
             background: rgba(255,255,255,0.1);
@@ -391,7 +569,7 @@
             color: var(--text-muted);
         }
 
-        .form-group input, .form-group textarea {
+        .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             background: rgba(0,0,0,0.2);
             border: 1px solid var(--border);
@@ -402,7 +580,11 @@
             font-size: 14px;
         }
 
-        .form-group input:focus, .form-group textarea:focus {
+        [data-theme="light"] .form-group input, [data-theme="light"] .form-group textarea, [data-theme="light"] .form-group select {
+            background: var(--surface-raised);
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
             outline: none;
             border-color: var(--primary);
         }
@@ -457,6 +639,8 @@
             font-size: 13px;
             width: 100%;
         }
+
+        [data-theme="light"] .item-editor-row input { background: var(--surface-raised); }
 
         .item-editor-row input:focus { outline: none; border-color: var(--primary); }
 
@@ -586,6 +770,10 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: 1fr 1fr; }
+        }
+
         @media (max-width: 380px) {
             .stats-row { grid-template-columns: 1fr; }
         }
@@ -601,22 +789,51 @@
 <body>
 
     <div class="header">
-        <h1>Accounting</h1>
+        <div class="header-left">
+            <h1>Accounting</h1>
+            <p id="header-subtitle">Track your expenses</p>
+        </div>
+        <div class="header-actions">
+            <button class="icon-btn" id="theme-toggle" title="Toggle theme">
+                <svg id="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                <svg id="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+            <button class="icon-btn" id="export-btn" title="Export to CSV">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+        </div>
     </div>
 
     <div class="stats-row">
         <div class="total-card">
-            <h2>Total</h2>
+            <h2>Total Spending</h2>
             <div class="amount" id="grand-total">...</div>
         </div>
         <div class="stat-card">
             <h2>Receipts</h2>
             <div class="amount" id="receipt-count">...</div>
+            <div class="stat-label">total entries</div>
+        </div>
+        <div class="stat-card">
+            <h2>This Month</h2>
+            <div class="amount" id="month-total">...</div>
+            <div class="stat-label" id="month-label">...</div>
         </div>
         <div class="stat-card">
             <h2>Average</h2>
             <div class="amount" id="receipt-average">...</div>
+            <div class="stat-label">per receipt</div>
         </div>
+    </div>
+
+    <!-- Category breakdown bar -->
+    <div class="category-bar-section" id="category-section" style="display:none;">
+        <div class="category-bar-title">
+            <h3>Spending by Category</h3>
+            <span class="period-label" id="category-period">All time</span>
+        </div>
+        <div class="category-bar" id="category-bar"></div>
+        <div class="category-legend" id="category-legend"></div>
     </div>
 
     <div class="toolbar">
@@ -624,7 +841,10 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input type="text" id="search-input" placeholder="Search by vendor or item…" autocomplete="off">
         </div>
-        <select id="sort-select">
+        <select class="filter-select" id="month-filter">
+            <option value="all">All months</option>
+        </select>
+        <select class="filter-select" id="sort-select">
             <option value="date_desc">Newest first</option>
             <option value="date_asc">Oldest first</option>
             <option value="total_desc">Highest amount</option>
@@ -665,7 +885,16 @@
             </div>
             <div class="form-group">
                 <label for="edit-category">Category</label>
-                <input type="text" id="edit-category" placeholder="e.g. Food, Transport, Entertainment">
+                <select id="edit-category">
+                    <option value="General">General</option>
+                    <option value="Food">Food</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Health">Health</option>
+                    <option value="Other">Other</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Items</label>
@@ -746,13 +975,86 @@
         }
 
         let AppSQL = null;
-        let allReceipts = []; // cached full list: {id, vendor, total, date, items}
+        let allReceipts = [];
         let pendingDeleteId = null;
+
+        // ---------- Category colors ----------
+
+        const CATEGORY_COLORS = {
+            'Food': '#fb923c',
+            'Transport': '#2dd4bf',
+            'Entertainment': '#f472b6',
+            'Shopping': '#a78bfa',
+            'Bills': '#f59e0b',
+            'Health': '#34d399',
+            'General': '#3b82f6',
+            'Other': '#60a5fa',
+        };
+
+        const CATEGORY_CLASSES = {
+            'Food': 'cat-food',
+            'Transport': 'cat-transport',
+            'Entertainment': 'cat-entertainment',
+            'Shopping': 'cat-shopping',
+            'Bills': 'cat-bills',
+            'Health': 'cat-health',
+            'General': 'cat-general',
+            'Other': 'cat-other',
+        };
+
+        function getCategoryColor(cat) {
+            return CATEGORY_COLORS[cat] || CATEGORY_COLORS['Other'];
+        }
+
+        function getCategoryClass(cat) {
+            return CATEGORY_CLASSES[cat] || CATEGORY_CLASSES['Other'];
+        }
+
+        // ---------- Theme ----------
+
+        function initTheme() {
+            const saved = localStorage.getItem('accounting-theme') || 'dark';
+            applyTheme(saved);
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('accounting-theme', theme);
+            document.getElementById('theme-icon-dark').style.display = theme === 'dark' ? 'block' : 'none';
+            document.getElementById('theme-icon-light').style.display = theme === 'light' ? 'block' : 'none';
+        }
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
+        // ---------- Database ----------
 
         async function getDatabase() {
             if (!AppSQL) AppSQL = await initSqlJs({ locateFile: file => file });
             const savedDb = await loadFromIndexedDB();
-            return new AppSQL.Database(savedDb || undefined);
+            const db = new AppSQL.Database(savedDb || undefined);
+
+            try {
+                db.run(`
+                    CREATE TABLE IF NOT EXISTS receipts (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        vendor TEXT NOT NULL,
+                        total REAL NOT NULL,
+                        date TEXT NOT NULL,
+                        items TEXT DEFAULT '[]',
+                        category TEXT DEFAULT 'General',
+                        created_at TEXT DEFAULT (datetime('now'))
+                    )
+                `);
+                try { db.run("ALTER TABLE receipts ADD COLUMN category TEXT DEFAULT 'General'"); } catch (_) {}
+                try { db.run("ALTER TABLE receipts ADD COLUMN created_at TEXT DEFAULT (datetime('now'))"); } catch (_) {}
+            } catch (e) {
+                console.error("DB init error:", e);
+            }
+
+            return db;
         }
 
         // ---------- Toasts ----------
@@ -773,24 +1075,14 @@
 
         async function initDashboard() {
             try {
-                if (!AppSQL) AppSQL = await initSqlJs({ locateFile: file => file });
-                const savedDb = await loadFromIndexedDB();
-
-                if (!savedDb) {
-                    allReceipts = [];
-                    renderStats([]);
-                    renderList([]);
-                    return;
-                }
-
-                const db = new AppSQL.Database(savedDb);
-                // Ensure category column exists for older databases
-                try { db.run("ALTER TABLE receipts ADD COLUMN category TEXT DEFAULT 'General'"); } catch (_) {}
+                const db = await getDatabase();
                 const results = db.exec("SELECT id, vendor, total, date, items, category FROM receipts ORDER BY date DESC, id DESC");
 
                 if (results.length === 0) {
                     allReceipts = [];
                     renderStats([]);
+                    renderCategoryBar([]);
+                    renderMonthFilter([]);
                     renderList([]);
                     return;
                 }
@@ -810,12 +1102,21 @@
                 });
 
                 renderStats(allReceipts);
+                renderCategoryBar(allReceipts);
+                renderMonthFilter(allReceipts);
                 applyFiltersAndRender();
+
+                // Update header subtitle
+                document.getElementById('header-subtitle').textContent = 
+                    `${allReceipts.length} receipt${allReceipts.length === 1 ? '' : 's'} tracked`;
 
             } catch (e) {
                 console.error(e);
                 document.getElementById('receipt-list').innerHTML = `
                     <div class="state-message error">
+                        <div class="state-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        </div>
                         <div class="state-title">Couldn't load your data</div>
                         <div class="state-sub">${escapeHtml(e.message)}</div>
                     </div>`;
@@ -826,25 +1127,117 @@
             const total = receipts.reduce((sum, r) => sum + r.total, 0);
             const count = receipts.length;
             const avg = count > 0 ? total / count : 0;
+
+            // This month's total
+            const now = new Date();
+            const monthStr = now.toISOString().slice(0, 7);
+            const monthReceipts = receipts.filter(r => r.date.startsWith(monthStr));
+            const monthTotal = monthReceipts.reduce((sum, r) => sum + r.total, 0);
+            const monthName = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
             document.getElementById('grand-total').innerText = `$${total.toFixed(2)}`;
             document.getElementById('receipt-count').innerText = count;
             document.getElementById('receipt-average').innerText = `$${avg.toFixed(2)}`;
+            document.getElementById('month-total').innerText = `$${monthTotal.toFixed(2)}`;
+            document.getElementById('month-label').innerText = monthName;
         }
 
-        // ---------- Search / sort ----------
+        // ---------- Category breakdown ----------
+
+        function renderCategoryBar(receipts) {
+            const section = document.getElementById('category-section');
+            if (receipts.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            const categoryTotals = {};
+            receipts.forEach(r => {
+                const cat = r.category || 'General';
+                categoryTotals[cat] = (categoryTotals[cat] || 0) + r.total;
+            });
+
+            const grandTotal = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
+            const sorted = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+
+            // Render bar
+            const bar = document.getElementById('category-bar');
+            bar.innerHTML = '';
+            sorted.forEach(([cat, amount]) => {
+                const pct = (amount / grandTotal) * 100;
+                const seg = document.createElement('div');
+                seg.className = 'category-segment';
+                seg.style.width = pct + '%';
+                seg.style.background = getCategoryColor(cat);
+                seg.title = `${cat}: $${amount.toFixed(2)} (${pct.toFixed(1)}%)`;
+                bar.appendChild(seg);
+            });
+
+            // Render legend
+            const legend = document.getElementById('category-legend');
+            legend.innerHTML = '';
+            sorted.forEach(([cat, amount]) => {
+                const pct = (amount / grandTotal) * 100;
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `
+                    <span class="legend-dot" style="background: ${getCategoryColor(cat)};"></span>
+                    <span>${escapeHtml(cat)}</span>
+                    <span class="legend-amount">$${amount.toFixed(2)}</span>
+                    <span style="opacity:0.5; font-size:11px;">${pct.toFixed(0)}%</span>
+                `;
+                legend.appendChild(item);
+            });
+        }
+
+        // ---------- Month filter ----------
+
+        function renderMonthFilter(receipts) {
+            const select = document.getElementById('month-filter');
+            const currentValue = select.value;
+            const months = [...new Set(receipts.map(r => r.date.slice(0, 7)))].sort().reverse();
+
+            select.innerHTML = '<option value="all">All months</option>';
+            months.forEach(month => {
+                const date = new Date(month + '-01');
+                const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                const count = receipts.filter(r => r.date.startsWith(month)).length;
+                const opt = document.createElement('option');
+                opt.value = month;
+                opt.textContent = `${label} (${count})`;
+                select.appendChild(opt);
+            });
+
+            if (currentValue && months.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        // ---------- Search / sort / filter ----------
 
         function applyFiltersAndRender() {
             const query = document.getElementById('search-input').value.trim().toLowerCase();
             const sortMode = document.getElementById('sort-select').value;
+            const monthFilter = document.getElementById('month-filter').value;
 
             let filtered = allReceipts;
+
+            // Month filter
+            if (monthFilter !== 'all') {
+                filtered = filtered.filter(r => r.date.startsWith(monthFilter));
+            }
+
+            // Search filter
             if (query) {
-                filtered = allReceipts.filter(r => {
+                filtered = filtered.filter(r => {
                     if (r.vendor.toLowerCase().includes(query)) return true;
                     return r.items.some(item => (item.name || '').toLowerCase().includes(query));
                 });
             }
 
+            // Sort
             const sorted = [...filtered].sort((a, b) => {
                 switch (sortMode) {
                     case 'date_asc': return a.date.localeCompare(b.date) || a.id - b.id;
@@ -856,10 +1249,23 @@
                 }
             });
 
+            // Update category bar for filtered set
+            renderCategoryBar(sorted);
+
             const resultCountEl = document.getElementById('result-count');
-            resultCountEl.innerText = query
+            const hasFilters = query || monthFilter !== 'all';
+            resultCountEl.innerText = hasFilters
                 ? `${sorted.length} of ${allReceipts.length} receipt${allReceipts.length === 1 ? '' : 's'}`
                 : '';
+
+            // Update period label
+            const periodLabel = document.getElementById('category-period');
+            if (monthFilter !== 'all') {
+                const date = new Date(monthFilter + '-01');
+                periodLabel.textContent = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            } else {
+                periodLabel.textContent = 'All time';
+            }
 
             renderList(sorted, query);
         }
@@ -870,6 +1276,9 @@
             if (allReceipts.length === 0) {
                 listEl.innerHTML = `
                     <div class="state-message">
+                        <div class="state-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        </div>
                         <div class="state-title">No receipts yet</div>
                         <div class="state-sub">Add an expense by uploading a receipt or typing something like "coffee 3.50".</div>
                     </div>`;
@@ -879,6 +1288,9 @@
             if (receipts.length === 0) {
                 listEl.innerHTML = `
                     <div class="state-message">
+                        <div class="state-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        </div>
                         <div class="state-title">No matches</div>
                         <div class="state-sub">Nothing found for "${escapeHtml(activeQuery || '')}".</div>
                     </div>`;
@@ -905,15 +1317,16 @@
                 }
 
                 const hasItems = r.items && r.items.length > 0;
-
                 const cat = r.category && r.category !== 'General' ? r.category : '';
+                const catClass = getCategoryClass(r.category || 'General');
+
                 html += `
                     <div class="receipt-card" style="animation-delay: ${Math.min(index * 0.06, 0.4)}s">
                         <div class="receipt-header" ${hasItems ? `onclick="toggleItems(${r.id})"` : ''}>
                             <div>
                                 <div class="receipt-vendor">${escapeHtml(r.vendor)}</div>
                                 <div class="receipt-date">${escapeHtml(r.date)}</div>
-                                ${cat ? `<div class="category-badge">${escapeHtml(cat)}</div>` : ''}
+                                ${cat ? `<div class="category-badge ${catClass}">${escapeHtml(cat)}</div>` : ''}
                                 ${hasItems ? `<div class="expand-hint">${r.items.length} item${r.items.length === 1 ? '' : 's'} · tap to expand</div>` : ''}
                             </div>
                             <div class="receipt-total">$${r.total.toFixed(2)}</div>
@@ -935,9 +1348,57 @@
             if (el) el.classList.toggle('expanded');
         }
 
+        // ---------- CSV Export ----------
+
+        function exportToCSV() {
+            if (allReceipts.length === 0) {
+                showToast('No receipts to export.', 'error');
+                return;
+            }
+
+            const headers = ['Date', 'Vendor', 'Category', 'Total', 'Item', 'Quantity', 'Price'];
+            const rows = [headers];
+
+            allReceipts.forEach(r => {
+                if (r.items && r.items.length > 0) {
+                    r.items.forEach((item, idx) => {
+                        rows.push([
+                            idx === 0 ? r.date : '',
+                            idx === 0 ? r.vendor : '',
+                            idx === 0 ? (r.category || 'General') : '',
+                            idx === 0 ? r.total.toFixed(2) : '',
+                            item.name || '',
+                            item.quantity || 1,
+                            (item.price || 0).toFixed(2)
+                        ]);
+                    });
+                } else {
+                    rows.push([r.date, r.vendor, r.category || 'General', r.total.toFixed(2), '', '', '']);
+                }
+            });
+
+            const csv = rows.map(row =>
+                row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+            ).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `expenses_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`Exported ${allReceipts.length} receipts to CSV.`, 'success');
+        }
+
+        document.getElementById('export-btn').addEventListener('click', exportToCSV);
+
         // ---------- Edit modal ----------
 
-        let editItemRows = []; // {name, quantity, price}
+        let editItemRows = [];
 
         function openEditModal(id) {
             const receipt = allReceipts.find(r => r.id === id);
@@ -1024,6 +1485,7 @@
             const vendor = document.getElementById('edit-vendor').value.trim();
             const date = document.getElementById('edit-date').value;
             const total = parseFloat(document.getElementById('edit-total').value);
+            const category = document.getElementById('edit-category').value;
 
             if (!vendor) { showToast('Vendor name is required.', 'error'); return; }
             if (!date) { showToast('Date is required.', 'error'); return; }
@@ -1032,8 +1494,6 @@
             const cleanItems = editItemRows
                 .filter(i => i.name.trim() !== '')
                 .map(i => ({ name: i.name.trim(), quantity: i.quantity || 1, price: i.price || 0 }));
-
-            const category = (document.getElementById('edit-category').value || 'General').trim();
 
             try {
                 const db = await getDatabase();
@@ -1087,6 +1547,7 @@
 
         document.getElementById('search-input').addEventListener('input', applyFiltersAndRender);
         document.getElementById('sort-select').addEventListener('change', applyFiltersAndRender);
+        document.getElementById('month-filter').addEventListener('change', applyFiltersAndRender);
 
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', (e) => {
@@ -1103,6 +1564,11 @@
                 document.getElementById('delete-modal').classList.remove('active');
                 pendingDeleteId = null;
             }
+            // Ctrl/Cmd + K to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('search-input').focus();
+            }
         });
 
         function escapeHtml(unsafe) {
@@ -1118,6 +1584,9 @@
             return escapeHtml(unsafe);
         }
 
+        // ---------- Init ----------
+
+        initTheme();
         window.onload = initDashboard;
     </script>
 </body>

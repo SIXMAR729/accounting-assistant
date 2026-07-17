@@ -17,12 +17,14 @@
                 };
                 request.onsuccess = function(event) {
                     const db = event.target.result;
+                    if (!db.objectStoreNames.contains("sqlite")) {
+                        resolve(undefined);
+                        return;
+                    }
                     const tx = db.transaction("sqlite", "readonly");
                     const store = tx.objectStore("sqlite");
                     const getReq = store.get("db_file");
-                    getReq.onsuccess = function() {
-                        resolve(getReq.result);
-                    };
+                    getReq.onsuccess = function() { resolve(getReq.result); };
                     getReq.onerror = function() { reject(getReq.error); };
                 };
                 request.onerror = function(event) { reject(event.target.error); };
@@ -44,25 +46,46 @@
             });
         }
 
+        let AppSQL = null;
+
+        async function getDatabase() {
+            if (!AppSQL) AppSQL = await initSqlJs({ locateFile: file => file });
+            const savedDb = await loadFromIndexedDB();
+            const db = new AppSQL.Database(savedDb || undefined);
+
+            // Ensure table exists with all columns (handles both new and legacy DBs)
+            try {
+                db.run(`
+                    CREATE TABLE IF NOT EXISTS receipts (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        vendor TEXT NOT NULL,
+                        total REAL NOT NULL,
+                        date TEXT NOT NULL,
+                        items TEXT DEFAULT '[]',
+                        category TEXT DEFAULT 'General',
+                        created_at TEXT DEFAULT (datetime('now'))
+                    )
+                `);
+                // Migration: add missing columns for older databases
+                try { db.run("ALTER TABLE receipts ADD COLUMN category TEXT DEFAULT 'General'"); } catch (_) {}
+                try { db.run("ALTER TABLE receipts ADD COLUMN created_at TEXT DEFAULT (datetime('now'))"); } catch (_) {}
+                // Add indexes for search performance
+                try { db.run("CREATE INDEX IF NOT EXISTS idx_receipts_vendor ON receipts(vendor)"); } catch (_) {}
+                try { db.run("CREATE INDEX IF NOT EXISTS idx_receipts_date ON receipts(date)"); } catch (_) {}
+                try { db.run("CREATE INDEX IF NOT EXISTS idx_receipts_category ON receipts(category)"); } catch (_) {}
+            } catch (e) {
+                console.error("DB init error:", e);
+            }
+
+            return db;
+        }
+
         window['ai_edge_gallery_get_result'] = async (dataStr) => {
             try {
                 const payload = JSON.parse(dataStr);
-                
-                // Initialize sql.js using local files
-                const SQL = await initSqlJs({
-                    locateFile: file => file // loads sql-wasm.wasm relative to index.html
-                });
-                
-                const savedDb = await loadFromIndexedDB();
-                let db;
-                if (savedDb) {
-                    db = new SQL.Database(savedDb);
-                } else {
-                    db = new SQL.Database();
-                    // Create tables with items tracked
-                    db.run("CREATE TABLE receipts (id INTEGER PRIMARY KEY, vendor TEXT, total REAL, date TEXT, items TEXT);");
-                }
-                
+                const db = await getDatabase();
+
+                // ─── Summary / View action ─────────────────────────
                 if (payload.action === 'summary' || payload.action === 'view') {
                     let count = 0, sum = 0;
                     try {
@@ -73,25 +96,76 @@
                         }
                     } catch(e) {}
                     
+                    // Get category breakdown
+                    let categoryBreakdown = [];
+                    try {
+                        const catResults = db.exec(`
+                            SELECT category, COUNT(*), SUM(total)
+                            FROM receipts
+                            GROUP BY category
+                            ORDER BY SUM(total) DESC
+                        `);
+                        if (catResults.length > 0) {
+                            categoryBreakdown = catResults[0].values.map(row => ({
+                                category: row[0],
+                                count: row[1],
+                                total: row[2]
+                            }));
+                        }
+                    } catch(e) {}
+
+                    // Get this month's total
+                    let monthTotal = 0;
+                    try {
+                        const now = new Date();
+                        const monthStr = now.toISOString().slice(0, 7);
+                        const monthResults = db.exec(
+                            "SELECT SUM(total) FROM receipts WHERE date LIKE ?",
+                            [monthStr + '%']
+                        );
+                        if (monthResults.length > 0 && monthResults[0].values.length > 0) {
+                            monthTotal = monthResults[0].values[0][0] || 0;
+                        }
+                    } catch(e) {}
+
+                    let summary = `You have ${count} saved receipts totaling $${Number(sum).toFixed(2)}.`;
+                    if (monthTotal > 0) {
+                        summary += ` This month you've spent $${monthTotal.toFixed(2)}.`;
+                    }
+                    if (categoryBreakdown.length > 0) {
+                        summary += `\n\nSpending by category:`;
+                        categoryBreakdown.forEach(c => {
+                            summary += `\n• ${c.category}: $${Number(c.total).toFixed(2)} (${c.count} receipts)`;
+                        });
+                    }
+
                     return JSON.stringify({
-                        result: `You have ${count} saved receipts totaling $${Number(sum).toFixed(2)}.`,
+                        result: summary,
                         webview: { url: "webview.html" }
                     });
                 }
 
+                // ─── Add expense action ───────────────────────────
                 const vendor = payload.vendor || "Unknown Vendor";
                 const total = payload.total || 0;
                 const date = payload.date || new Date().toISOString().split('T')[0];
                 const items = JSON.stringify(payload.items || []);
-                
-                db.run("INSERT INTO receipts (vendor, total, date, items) VALUES (?, ?, ?, ?)", [vendor, total, date, items]);
-                
+                const category = payload.category || 'General';
+
+                db.run(
+                    "INSERT INTO receipts (vendor, total, date, items, category) VALUES (?, ?, ?, ?, ?)",
+                    [vendor, total, date, items, category]
+                );
+
                 // Export db state to IndexedDB
-                const data = db.export(); // returns Uint8Array
+                const data = db.export();
                 await saveToIndexedDB(data);
                 
-                const resultString = `Success! Saved receipt for ${vendor} ($${Number(total).toFixed(2)}) on ${date}.`;
-                
+                let resultString = `Success! Saved receipt for ${vendor} ($${Number(total).toFixed(2)}) on ${date}.`;
+                if (category && category !== 'General') {
+                    resultString += ` Category: ${category}.`;
+                }
+
                 return JSON.stringify({
                     result: resultString,
                     webview: { url: "webview.html" }
