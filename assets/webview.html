@@ -5,19 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Accounting Dashboard</title>
     <script src="sql-wasm.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #0f172a;
             --surface-color: #1e293b;
+            --surface-raised: #273549;
             --primary: #3b82f6;
             --primary-glow: rgba(59, 130, 246, 0.5);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
+            --text-faint: #64748b;
             --border: #334155;
             --danger: #ef4444;
             --success: #10b981;
         }
+
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -30,8 +34,15 @@
             overflow-y: auto;
         }
 
+        button, input, textarea, select { font-family: inherit; }
+
+        :focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
         .header {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             text-align: center;
         }
 
@@ -44,102 +55,199 @@
             -webkit-text-fill-color: transparent;
         }
 
+        /* ---------- Stats ---------- */
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
         .total-card {
-            background: linear-gradient(145deg, var(--surface-color), #273549);
+            background: linear-gradient(145deg, var(--surface-color), var(--surface-raised));
             border-radius: 20px;
-            padding: 28px;
+            padding: 22px 20px;
             text-align: center;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px var(--primary-glow);
-            margin-bottom: 30px;
             border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-card {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .total-card h2 {
+        .total-card h2, .stat-card h2 {
             margin: 0;
-            font-size: 14px;
+            font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1.2px;
             color: var(--text-muted);
             font-weight: 600;
         }
 
         .total-card .amount {
-            font-size: 48px;
+            font-size: 40px;
             font-weight: 700;
-            margin: 12px 0 0 0;
+            margin: 10px 0 0 0;
             color: #fff;
             text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            line-height: 1;
         }
+
+        .stat-card .amount {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 8px 0 0 0;
+            color: var(--text-main);
+        }
+
+        /* ---------- Toolbar ---------- */
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-wrap svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-faint);
+            pointer-events: none;
+        }
+
+        #search-input {
+            width: 100%;
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 11px 12px 11px 36px;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        #search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        #search-input::placeholder { color: var(--text-faint); }
+
+        #sort-select {
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 11px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%2394a3b8'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 30px;
+        }
+
+        #sort-select:focus { outline: none; border-color: var(--primary); }
+
+        .result-count {
+            font-size: 12px;
+            color: var(--text-faint);
+            margin: -10px 0 16px 2px;
+        }
+
+        /* ---------- Receipt list ---------- */
 
         .receipt-list {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             padding-bottom: 40px;
         }
 
         .receipt-card {
             background-color: var(--surface-color);
             border-radius: 16px;
-            padding: 20px;
+            padding: 18px 20px;
             border: 1px solid var(--border);
             box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s, background-color 0.2s;
-            animation: fadeIn 0.5s ease-out;
+            transition: transform 0.15s, background-color 0.15s;
+            animation: fadeIn 0.4s ease-out;
             animation-fill-mode: both;
         }
 
-        .receipt-card:active {
-            transform: scale(0.98);
-            background-color: #273549;
-        }
+        .receipt-card:active { transform: scale(0.99); }
 
         .receipt-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
         }
 
         .receipt-vendor {
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 600;
             margin-bottom: 4px;
         }
 
         .receipt-date {
-            font-size: 13px;
+            font-size: 12.5px;
             color: var(--text-muted);
         }
 
         .receipt-total {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 700;
             color: var(--primary);
             background: linear-gradient(135deg, #60a5fa, #93c5fd);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            white-space: nowrap;
         }
 
         .receipt-items {
             background: rgba(0, 0, 0, 0.25);
             border-radius: 12px;
-            padding: 14px;
-            margin-top: 16px;
-            font-size: 14px;
+            padding: 12px 14px;
+            margin-top: 14px;
+            font-size: 13.5px;
             border: 1px solid rgba(255, 255, 255, 0.03);
+            display: none;
         }
+
+        .receipt-items.expanded { display: block; }
 
         .item-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 7px;
             color: #cbd5e1;
         }
 
-        .item-row:last-child {
-            margin-bottom: 0;
-        }
+        .item-row:last-child { margin-bottom: 0; }
 
         .item-qty {
             opacity: 0.6;
@@ -147,27 +255,66 @@
             font-size: 12px;
         }
 
-        .loading {
+        .expand-hint {
+            font-size: 11.5px;
+            color: var(--text-faint);
+            margin-top: 6px;
+        }
+
+        .category-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(59, 130, 246, 0.12);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            margin-top: 5px;
+            letter-spacing: 0.3px;
+        }
+
+        .state-message {
             text-align: center;
-            padding: 40px;
+            padding: 48px 20px;
             color: var(--text-muted);
-            font-style: italic;
-            animation: pulse 1.5s infinite;
         }
 
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .state-message .state-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 6px;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .state-message .state-sub {
+            font-size: 13px;
+            color: var(--text-faint);
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
+        .state-message.error .state-title { color: var(--danger); }
+
+        /* Skeleton loading */
+
+        .skeleton-card {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            margin-bottom: 14px;
+        }
+
+        .skeleton-line {
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, var(--border) 25%, #40506b 37%, var(--border) 63%);
+            background-size: 400% 100%;
+            animation: shimmer 1.4s ease infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
         }
 
         .receipt-actions {
@@ -182,7 +329,7 @@
             background: rgba(255,255,255,0.05);
             border: 1px solid var(--border);
             color: var(--text-muted);
-            padding: 6px 12px;
+            padding: 7px 14px;
             border-radius: 8px;
             font-size: 13px;
             cursor: pointer;
@@ -195,15 +342,10 @@
             color: var(--text-main);
         }
 
-        .btn-edit:hover {
-            color: var(--primary);
-            border-color: var(--primary-glow);
-        }
+        .btn-edit:hover { color: var(--primary); border-color: var(--primary-glow); }
+        .btn-delete:hover { color: var(--danger); border-color: rgba(239, 68, 68, 0.5); }
 
-        .btn-delete:hover {
-            color: var(--danger);
-            border-color: rgba(239, 68, 68, 0.5);
-        }
+        /* ---------- Modals ---------- */
 
         .modal-overlay {
             position: fixed;
@@ -217,32 +359,30 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
+            padding: 20px;
         }
 
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
         .modal-content {
             background: var(--surface-color);
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 24px;
-            width: 90%;
-            max-width: 400px;
+            width: 100%;
+            max-width: 420px;
+            max-height: 85vh;
+            overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             transform: translateY(20px);
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .modal-overlay.active .modal-content {
-            transform: translateY(0);
-        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
 
-        .form-group {
-            margin-bottom: 16px;
-        }
+        .modal-content h2 { margin: 0 0 20px 0; font-size: 18px; }
+
+        .form-group { margin-bottom: 16px; }
 
         .form-group label {
             display: block;
@@ -253,15 +393,15 @@
 
         .form-group input, .form-group textarea {
             width: 100%;
-            box-sizing: border-box;
             background: rgba(0,0,0,0.2);
             border: 1px solid var(--border);
             color: var(--text-main);
             padding: 10px;
             border-radius: 8px;
             font-family: inherit;
+            font-size: 14px;
         }
-        
+
         .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
@@ -278,14 +418,183 @@
             background: var(--primary);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 9px 18px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
             transition: background 0.2s;
         }
-        .btn-primary:hover {
-            background: #2563eb;
+        .btn-primary:hover { background: #2563eb; }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-danger:hover { background: #dc2626; }
+
+        /* Item editor rows */
+
+        .item-editor-row {
+            display: grid;
+            grid-template-columns: 1fr 52px 70px 28px;
+            gap: 6px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        .item-editor-row input {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 7px;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .item-editor-row input:focus { outline: none; border-color: var(--primary); }
+
+        .item-remove-btn {
+            background: none;
+            border: none;
+            color: var(--text-faint);
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            padding: 4px;
+        }
+
+        .item-remove-btn:hover { color: var(--danger); }
+
+        .item-editor-labels {
+            display: grid;
+            grid-template-columns: 1fr 52px 70px 28px;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-faint);
+            margin-bottom: 6px;
+            padding: 0 2px;
+        }
+
+        .add-item-btn {
+            background: none;
+            border: 1px dashed var(--border);
+            color: var(--text-muted);
+            padding: 8px;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 4px;
+            transition: all 0.2s;
+        }
+
+        .add-item-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .items-sum-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .items-sum-row button {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 12.5px;
+            padding: 0;
+            text-decoration: underline;
+        }
+
+        /* ---------- Toasts ---------- */
+
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            width: calc(100% - 40px);
+            max-width: 420px;
+        }
+
+        .toast {
+            background: var(--surface-raised);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            animation: toastIn 0.25s ease-out;
+        }
+
+        .toast.success { border-color: rgba(16, 185, 129, 0.4); }
+        .toast.error { border-color: rgba(239, 68, 68, 0.4); }
+
+        .toast .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .toast.success .dot { background: var(--success); }
+        .toast.error .dot { background: var(--danger); }
+        .toast.info .dot { background: var(--primary); }
+
+        .toast.leaving { animation: toastOut 0.25s ease-in forwards; }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(10px); }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 380px) {
+            .stats-row { grid-template-columns: 1fr; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                transition-duration: 0.001ms !important;
+            }
         }
     </style>
 </head>
@@ -295,43 +604,107 @@
         <h1>Accounting</h1>
     </div>
 
-    <div class="total-card">
-        <h2>Total Expenses</h2>
-        <div class="amount" id="grand-total">...</div>
+    <div class="stats-row">
+        <div class="total-card">
+            <h2>Total</h2>
+            <div class="amount" id="grand-total">...</div>
+        </div>
+        <div class="stat-card">
+            <h2>Receipts</h2>
+            <div class="amount" id="receipt-count">...</div>
+        </div>
+        <div class="stat-card">
+            <h2>Average</h2>
+            <div class="amount" id="receipt-average">...</div>
+        </div>
     </div>
+
+    <div class="toolbar">
+        <div class="search-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="search-input" placeholder="Search by vendor or item…" autocomplete="off">
+        </div>
+        <select id="sort-select">
+            <option value="date_desc">Newest first</option>
+            <option value="date_asc">Oldest first</option>
+            <option value="total_desc">Highest amount</option>
+            <option value="total_asc">Lowest amount</option>
+            <option value="vendor_asc">Vendor A–Z</option>
+        </select>
+    </div>
+
+    <div class="result-count" id="result-count"></div>
 
     <div class="receipt-list" id="receipt-list">
-        <div class="loading">Loading your records...</div>
+        <div class="skeleton-card">
+            <div class="skeleton-line" style="width:40%; margin-bottom:10px;"></div>
+            <div class="skeleton-line" style="width:25%;"></div>
+        </div>
+        <div class="skeleton-card">
+            <div class="skeleton-line" style="width:55%; margin-bottom:10px;"></div>
+            <div class="skeleton-line" style="width:30%;"></div>
+        </div>
     </div>
 
+    <!-- Edit modal -->
     <div class="modal-overlay" id="edit-modal">
         <div class="modal-content">
-            <h2 style="margin: 0 0 20px 0; font-size: 18px;">Edit Receipt</h2>
+            <h2>Edit Receipt</h2>
             <input type="hidden" id="edit-id">
             <div class="form-group">
-                <label>Vendor</label>
+                <label for="edit-vendor">Vendor</label>
                 <input type="text" id="edit-vendor">
             </div>
             <div class="form-group">
-                <label>Date</label>
+                <label for="edit-date">Date</label>
                 <input type="date" id="edit-date">
             </div>
             <div class="form-group">
-                <label>Total ($)</label>
+                <label for="edit-total">Total ($)</label>
                 <input type="number" step="0.01" id="edit-total">
             </div>
             <div class="form-group">
-                <label>Items (JSON format)</label>
-                <textarea id="edit-items" rows="4"></textarea>
+                <label for="edit-category">Category</label>
+                <input type="text" id="edit-category" placeholder="e.g. Food, Transport, Entertainment">
+            </div>
+            <div class="form-group">
+                <label>Items</label>
+                <div class="item-editor-labels">
+                    <span>Name</span><span>Qty</span><span>Price</span><span></span>
+                </div>
+                <div id="item-editor-rows"></div>
+                <button type="button" class="add-item-btn" id="add-item-btn">+ Add item</button>
+                <div class="items-sum-row">
+                    <span>Items sum: <strong id="items-sum-display">$0.00</strong></span>
+                    <button type="button" id="use-sum-btn">Use as total</button>
+                </div>
             </div>
             <div class="modal-actions">
-                <button class="btn-action" onclick="closeEditModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveEdit()">Save Changes</button>
+                <button class="btn-action" id="edit-cancel-btn">Cancel</button>
+                <button class="btn-primary" id="edit-save-btn">Save Changes</button>
             </div>
         </div>
     </div>
 
+    <!-- Delete confirm modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal-content" style="max-width: 360px;">
+            <h2>Delete receipt?</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin: -10px 0 20px 0;">
+                This removes <strong id="delete-target-label" style="color: var(--text-main);"></strong> permanently. This can't be undone.
+            </p>
+            <div class="modal-actions">
+                <button class="btn-action" id="delete-cancel-btn">Cancel</button>
+                <button class="btn-danger" id="delete-confirm-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
     <script>
+        // ---------- IndexedDB helpers ----------
+
         function loadFromIndexedDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open("AccountingDB", 1);
@@ -373,160 +746,364 @@
         }
 
         let AppSQL = null;
+        let allReceipts = []; // cached full list: {id, vendor, total, date, items}
+        let pendingDeleteId = null;
 
         async function getDatabase() {
             if (!AppSQL) AppSQL = await initSqlJs({ locateFile: file => file });
             const savedDb = await loadFromIndexedDB();
-            return new AppSQL.Database(savedDb || []);
+            return new AppSQL.Database(savedDb || undefined);
         }
+
+        // ---------- Toasts ----------
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span class="dot"></span><span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('leaving');
+                setTimeout(() => toast.remove(), 250);
+            }, 3200);
+        }
+
+        // ---------- Data loading ----------
 
         async function initDashboard() {
             try {
-                if (!AppSQL) {
-                    AppSQL = await initSqlJs({ locateFile: file => file });
-                }
-                
+                if (!AppSQL) AppSQL = await initSqlJs({ locateFile: file => file });
                 const savedDb = await loadFromIndexedDB();
+
                 if (!savedDb) {
-                    document.getElementById('grand-total').innerText = '$0.00';
-                    document.getElementById('receipt-list').innerHTML = '<div class="loading" style="animation:none;">No receipts found yet. Add one!</div>';
+                    allReceipts = [];
+                    renderStats([]);
+                    renderList([]);
                     return;
                 }
-                
+
                 const db = new AppSQL.Database(savedDb);
-                
-                // Read from DB
-                const results = db.exec("SELECT id, vendor, total, date, items FROM receipts ORDER BY date DESC, id DESC");
-                
+                // Ensure category column exists for older databases
+                try { db.run("ALTER TABLE receipts ADD COLUMN category TEXT DEFAULT 'General'"); } catch (_) {}
+                const results = db.exec("SELECT id, vendor, total, date, items, category FROM receipts ORDER BY date DESC, id DESC");
+
                 if (results.length === 0) {
-                    document.getElementById('grand-total').innerText = '$0.00';
-                    document.getElementById('receipt-list').innerHTML = '<div class="loading" style="animation:none;">No receipts found.</div>';
+                    allReceipts = [];
+                    renderStats([]);
+                    renderList([]);
                     return;
                 }
-                
+
                 const columns = results[0].columns;
-                const values = results[0].values;
-                
-                let grandTotal = 0;
-                let html = '';
-                
-                values.forEach((row, index) => {
-                    const vendor = row[columns.indexOf('vendor')];
-                    const total = row[columns.indexOf('total')];
-                    const date = row[columns.indexOf('date')];
+                allReceipts = results[0].values.map(row => {
                     let items = [];
-                    try {
-                        items = JSON.parse(row[columns.indexOf('items')]);
-                    } catch (e) {}
-                    
-                    grandTotal += (total || 0);
-                    
-                    let itemsHtml = '';
-                    if (items && items.length > 0) {
-                        itemsHtml = `<div class="receipt-items">`;
-                        items.forEach(item => {
-                            const itemName = item.name || 'Item';
-                            const itemPrice = item.price || 0;
-                            const qty = item.quantity || 1;
-                            itemsHtml += `
-                                <div class="item-row">
-                                    <span><span class="item-qty">${qty}x</span> ${escapeHtml(itemName)}</span>
-                                    <span>$${Number(itemPrice * qty).toFixed(2)}</span>
-                                </div>
-                            `;
-                        });
-                        itemsHtml += `</div>`;
-                    }
-                    
-                    const id = row[columns.indexOf('id')];
-                    const encodedVendor = encodeURIComponent(vendor);
-                    const encodedDate = encodeURIComponent(date);
-                    const encodedItems = encodeURIComponent(row[columns.indexOf('items')]);
-
-                    html += `
-                        <div class="receipt-card" style="animation-delay: ${index * 0.08}s">
-                            <div class="receipt-header">
-                                <div>
-                                    <div class="receipt-vendor">${escapeHtml(vendor)}</div>
-                                    <div class="receipt-date">${escapeHtml(date)}</div>
-                                </div>
-                                <div class="receipt-total">$${Number(total || 0).toFixed(2)}</div>
-                            </div>
-                            ${itemsHtml}
-                            <div class="receipt-actions">
-                                <button class="btn-action btn-edit" onclick="openEditModal(${id}, '${encodedVendor}', ${total || 0}, '${encodedDate}', '${encodedItems}')">Edit</button>
-                                <button class="btn-action btn-delete" onclick="deleteReceipt(${id})">Delete</button>
-                            </div>
-                        </div>
-                    `;
+                    try { items = JSON.parse(row[columns.indexOf('items')]) || []; } catch (e) {}
+                    return {
+                        id: row[columns.indexOf('id')],
+                        vendor: row[columns.indexOf('vendor')] || 'Unknown Vendor',
+                        total: Number(row[columns.indexOf('total')]) || 0,
+                        date: row[columns.indexOf('date')] || '',
+                        items,
+                        category: row[columns.indexOf('category')] || 'General'
+                    };
                 });
-                
-                // Animate total amount counting up
-                document.getElementById('grand-total').innerText = `$${grandTotal.toFixed(2)}`;
-                document.getElementById('receipt-list').innerHTML = html;
-                
-            } catch(e) {
-                document.getElementById('receipt-list').innerHTML = `<div class="loading" style="color:var(--danger); animation:none;">Storage error: ${e.message}</div>`;
+
+                renderStats(allReceipts);
+                applyFiltersAndRender();
+
+            } catch (e) {
                 console.error(e);
-            }
-        }
-        
-        async function deleteReceipt(id) {
-            if (!confirm("Are you sure you want to delete this receipt?")) return;
-            try {
-                const db = await getDatabase();
-                db.run("DELETE FROM receipts WHERE id = ?", [id]);
-                await saveToIndexedDB(db.export());
-                initDashboard();
-            } catch(e) {
-                alert("Error deleting: " + e.message);
+                document.getElementById('receipt-list').innerHTML = `
+                    <div class="state-message error">
+                        <div class="state-title">Couldn't load your data</div>
+                        <div class="state-sub">${escapeHtml(e.message)}</div>
+                    </div>`;
             }
         }
 
-        function openEditModal(id, vendorEnc, total, dateEnc, itemsEnc) {
-            document.getElementById('edit-id').value = id;
-            document.getElementById('edit-vendor').value = decodeURIComponent(vendorEnc);
-            document.getElementById('edit-date').value = decodeURIComponent(dateEnc);
-            document.getElementById('edit-total').value = total;
-            
-            let itemsStr = decodeURIComponent(itemsEnc);
-            try {
-                const obj = JSON.parse(itemsStr);
-                itemsStr = JSON.stringify(obj, null, 2);
-            } catch(e) {}
-            
-            document.getElementById('edit-items').value = itemsStr;
+        function renderStats(receipts) {
+            const total = receipts.reduce((sum, r) => sum + r.total, 0);
+            const count = receipts.length;
+            const avg = count > 0 ? total / count : 0;
+            document.getElementById('grand-total').innerText = `$${total.toFixed(2)}`;
+            document.getElementById('receipt-count').innerText = count;
+            document.getElementById('receipt-average').innerText = `$${avg.toFixed(2)}`;
+        }
+
+        // ---------- Search / sort ----------
+
+        function applyFiltersAndRender() {
+            const query = document.getElementById('search-input').value.trim().toLowerCase();
+            const sortMode = document.getElementById('sort-select').value;
+
+            let filtered = allReceipts;
+            if (query) {
+                filtered = allReceipts.filter(r => {
+                    if (r.vendor.toLowerCase().includes(query)) return true;
+                    return r.items.some(item => (item.name || '').toLowerCase().includes(query));
+                });
+            }
+
+            const sorted = [...filtered].sort((a, b) => {
+                switch (sortMode) {
+                    case 'date_asc': return a.date.localeCompare(b.date) || a.id - b.id;
+                    case 'total_desc': return b.total - a.total;
+                    case 'total_asc': return a.total - b.total;
+                    case 'vendor_asc': return a.vendor.localeCompare(b.vendor);
+                    case 'date_desc':
+                    default: return b.date.localeCompare(a.date) || b.id - a.id;
+                }
+            });
+
+            const resultCountEl = document.getElementById('result-count');
+            resultCountEl.innerText = query
+                ? `${sorted.length} of ${allReceipts.length} receipt${allReceipts.length === 1 ? '' : 's'}`
+                : '';
+
+            renderList(sorted, query);
+        }
+
+        function renderList(receipts, activeQuery) {
+            const listEl = document.getElementById('receipt-list');
+
+            if (allReceipts.length === 0) {
+                listEl.innerHTML = `
+                    <div class="state-message">
+                        <div class="state-title">No receipts yet</div>
+                        <div class="state-sub">Add an expense by uploading a receipt or typing something like "coffee 3.50".</div>
+                    </div>`;
+                return;
+            }
+
+            if (receipts.length === 0) {
+                listEl.innerHTML = `
+                    <div class="state-message">
+                        <div class="state-title">No matches</div>
+                        <div class="state-sub">Nothing found for "${escapeHtml(activeQuery || '')}".</div>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            receipts.forEach((r, index) => {
+                let itemsHtml = '';
+                if (r.items && r.items.length > 0) {
+                    itemsHtml = `<div class="receipt-items" id="items-${r.id}">`;
+                    r.items.forEach(item => {
+                        const itemName = item.name || 'Item';
+                        const itemPrice = item.price || 0;
+                        const qty = item.quantity || 1;
+                        itemsHtml += `
+                            <div class="item-row">
+                                <span><span class="item-qty">${qty}x</span> ${escapeHtml(itemName)}</span>
+                                <span>$${Number(itemPrice * qty).toFixed(2)}</span>
+                            </div>
+                        `;
+                    });
+                    itemsHtml += `</div>`;
+                }
+
+                const hasItems = r.items && r.items.length > 0;
+
+                const cat = r.category && r.category !== 'General' ? r.category : '';
+                html += `
+                    <div class="receipt-card" style="animation-delay: ${Math.min(index * 0.06, 0.4)}s">
+                        <div class="receipt-header" ${hasItems ? `onclick="toggleItems(${r.id})"` : ''}>
+                            <div>
+                                <div class="receipt-vendor">${escapeHtml(r.vendor)}</div>
+                                <div class="receipt-date">${escapeHtml(r.date)}</div>
+                                ${cat ? `<div class="category-badge">${escapeHtml(cat)}</div>` : ''}
+                                ${hasItems ? `<div class="expand-hint">${r.items.length} item${r.items.length === 1 ? '' : 's'} · tap to expand</div>` : ''}
+                            </div>
+                            <div class="receipt-total">$${r.total.toFixed(2)}</div>
+                        </div>
+                        ${itemsHtml}
+                        <div class="receipt-actions">
+                            <button class="btn-action btn-edit" onclick="openEditModal(${r.id})">Edit</button>
+                            <button class="btn-action btn-delete" onclick="openDeleteModal(${r.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listEl.innerHTML = html;
+        }
+
+        function toggleItems(id) {
+            const el = document.getElementById(`items-${id}`);
+            if (el) el.classList.toggle('expanded');
+        }
+
+        // ---------- Edit modal ----------
+
+        let editItemRows = []; // {name, quantity, price}
+
+        function openEditModal(id) {
+            const receipt = allReceipts.find(r => r.id === id);
+            if (!receipt) return;
+
+            document.getElementById('edit-id').value = receipt.id;
+            document.getElementById('edit-vendor').value = receipt.vendor;
+            document.getElementById('edit-date').value = receipt.date;
+            document.getElementById('edit-total').value = receipt.total;
+            document.getElementById('edit-category').value = receipt.category || 'General';
+
+            editItemRows = (receipt.items || []).map(i => ({
+                name: i.name || '',
+                quantity: i.quantity || 1,
+                price: i.price || 0
+            }));
+
+            renderItemEditorRows();
             document.getElementById('edit-modal').classList.add('active');
+            document.getElementById('edit-vendor').focus();
         }
 
         function closeEditModal() {
             document.getElementById('edit-modal').classList.remove('active');
         }
 
-        async function saveEdit() {
-            const id = document.getElementById('edit-id').value;
-            const vendor = document.getElementById('edit-vendor').value;
-            const date = document.getElementById('edit-date').value;
-            const total = parseFloat(document.getElementById('edit-total').value) || 0;
-            const items = document.getElementById('edit-items').value || '[]';
-            
-            try {
-                JSON.parse(items);
-            } catch(e) {
-                alert("Invalid JSON in Items field.");
-                return;
+        function renderItemEditorRows() {
+            const container = document.getElementById('item-editor-rows');
+            container.innerHTML = '';
+            editItemRows.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = 'item-editor-row';
+                row.innerHTML = `
+                    <input type="text" value="${escapeAttr(item.name)}" placeholder="Item name" data-field="name" data-idx="${idx}">
+                    <input type="number" min="0" step="1" value="${item.quantity}" data-field="quantity" data-idx="${idx}">
+                    <input type="number" min="0" step="0.01" value="${item.price}" data-field="price" data-idx="${idx}">
+                    <button type="button" class="item-remove-btn" data-remove-idx="${idx}" title="Remove item">✕</button>
+                `;
+                container.appendChild(row);
+            });
+            updateItemsSum();
+        }
+
+        document.getElementById('item-editor-rows').addEventListener('input', (e) => {
+            const idx = e.target.getAttribute('data-idx');
+            const field = e.target.getAttribute('data-field');
+            if (idx === null) return;
+            if (field === 'name') editItemRows[idx].name = e.target.value;
+            if (field === 'quantity') editItemRows[idx].quantity = parseFloat(e.target.value) || 0;
+            if (field === 'price') editItemRows[idx].price = parseFloat(e.target.value) || 0;
+            updateItemsSum();
+        });
+
+        document.getElementById('item-editor-rows').addEventListener('click', (e) => {
+            const removeIdx = e.target.getAttribute('data-remove-idx');
+            if (removeIdx !== null) {
+                editItemRows.splice(Number(removeIdx), 1);
+                renderItemEditorRows();
             }
+        });
+
+        document.getElementById('add-item-btn').addEventListener('click', () => {
+            editItemRows.push({ name: '', quantity: 1, price: 0 });
+            renderItemEditorRows();
+            const rows = document.querySelectorAll('#item-editor-rows .item-editor-row');
+            const lastRow = rows[rows.length - 1];
+            if (lastRow) lastRow.querySelector('input').focus();
+        });
+
+        function updateItemsSum() {
+            const sum = editItemRows.reduce((s, i) => s + (i.quantity * i.price), 0);
+            document.getElementById('items-sum-display').innerText = `$${sum.toFixed(2)}`;
+        }
+
+        document.getElementById('use-sum-btn').addEventListener('click', () => {
+            const sum = editItemRows.reduce((s, i) => s + (i.quantity * i.price), 0);
+            document.getElementById('edit-total').value = sum.toFixed(2);
+        });
+
+        document.getElementById('edit-cancel-btn').addEventListener('click', closeEditModal);
+
+        document.getElementById('edit-save-btn').addEventListener('click', async () => {
+            const id = document.getElementById('edit-id').value;
+            const vendor = document.getElementById('edit-vendor').value.trim();
+            const date = document.getElementById('edit-date').value;
+            const total = parseFloat(document.getElementById('edit-total').value);
+
+            if (!vendor) { showToast('Vendor name is required.', 'error'); return; }
+            if (!date) { showToast('Date is required.', 'error'); return; }
+            if (isNaN(total) || total < 0) { showToast('Enter a valid, non-negative total.', 'error'); return; }
+
+            const cleanItems = editItemRows
+                .filter(i => i.name.trim() !== '')
+                .map(i => ({ name: i.name.trim(), quantity: i.quantity || 1, price: i.price || 0 }));
+
+            const category = (document.getElementById('edit-category').value || 'General').trim();
 
             try {
                 const db = await getDatabase();
-                db.run("UPDATE receipts SET vendor=?, date=?, total=?, items=? WHERE id=?", [vendor, date, total, items, id]);
+                db.run(
+                    "UPDATE receipts SET vendor=?, date=?, total=?, items=?, category=? WHERE id=?",
+                    [vendor, date, total, JSON.stringify(cleanItems), category, id]
+                );
                 await saveToIndexedDB(db.export());
                 closeEditModal();
+                showToast('Receipt updated.', 'success');
                 initDashboard();
-            } catch(e) {
-                alert("Error updating: " + e.message);
+            } catch (e) {
+                showToast(`Error saving: ${e.message}`, 'error');
             }
+        });
+
+        // ---------- Delete modal ----------
+
+        function openDeleteModal(id) {
+            const receipt = allReceipts.find(r => r.id === id);
+            pendingDeleteId = id;
+            document.getElementById('delete-target-label').innerText = receipt
+                ? `${receipt.vendor} ($${receipt.total.toFixed(2)})`
+                : 'this receipt';
+            document.getElementById('delete-modal').classList.add('active');
         }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('active');
+            pendingDeleteId = null;
+        }
+
+        document.getElementById('delete-cancel-btn').addEventListener('click', closeDeleteModal);
+
+        document.getElementById('delete-confirm-btn').addEventListener('click', async () => {
+            if (pendingDeleteId === null) return;
+            const id = pendingDeleteId;
+            try {
+                const db = await getDatabase();
+                db.run("DELETE FROM receipts WHERE id = ?", [id]);
+                await saveToIndexedDB(db.export());
+                closeDeleteModal();
+                showToast('Receipt deleted.', 'success');
+                initDashboard();
+            } catch (e) {
+                showToast(`Error deleting: ${e.message}`, 'error');
+            }
+        });
+
+        // ---------- Global listeners ----------
+
+        document.getElementById('search-input').addEventListener('input', applyFiltersAndRender);
+        document.getElementById('sort-select').addEventListener('change', applyFiltersAndRender);
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                    if (overlay.id === 'delete-modal') pendingDeleteId = null;
+                }
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.getElementById('edit-modal').classList.remove('active');
+                document.getElementById('delete-modal').classList.remove('active');
+                pendingDeleteId = null;
+            }
+        });
 
         function escapeHtml(unsafe) {
             return (unsafe || '').toString()
@@ -535,6 +1112,10 @@
                  .replace(/>/g, "&gt;")
                  .replace(/"/g, "&quot;")
                  .replace(/'/g, "&#039;");
+        }
+
+        function escapeAttr(unsafe) {
+            return escapeHtml(unsafe);
         }
 
         window.onload = initDashboard;
