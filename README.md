@@ -1,3 +1,53 @@
+# 🚀 Release Notes: New Features & UI Improvements
+
+## 🆕 New Features
+
+### 1. Smart Categorization
+The system automatically categorizes your expenses by scanning transaction keywords:
+* **Food:** `coffee`, `pizza`, `restaurant`, `lunch`, `dinner`, `cafe`, `burger`
+* **Transport:** `taxi`, `grab`, `uber`, `bus`, `train`, `fuel`, `parking`
+* **Entertainment:** `movie`, `cinema`, `netflix`, `spotify`, `gaming`
+* **Shopping:** `clothes`, `shoes`, `electronics`, `amazon`
+* **Bills:** `electricity`, `water`, `internet`, `rent`, `insurance`
+* **Health:** `pharmacy`, `medicine`, `doctor`, `hospital`
+
+### 2. Visual Category Breakdown Bar
+* **Color-Coded Bar:** Visual horizontal bar showing real-time spending distribution.
+* **Detailed Legend:** Displays category names, exact amounts, and percentages.
+* **Dynamic Updates:** Automatically updates based on your active filters.
+
+### 3. Dark/Light Theme Toggle
+* **Header Icon:** Quickly toggle themes by clicking the 🌙 / ☀️ icon.
+* **Persistence:** Saves your preference across sessions using `localStorage`.
+* **Smooth UI:** Features fluid visual transitions between modes.
+
+### 4. CSV Export
+* **One-Click Download:** Instant export of your entire receipt database.
+* **Full Data Scope:** Includes date, vendor, category, total, and itemized lists.
+* **Broad Compatibility:** Fully compatible with Microsoft Excel and Google Sheets.
+
+### 5. Month Filter
+* **Smart Dropdown:** Displays available months alongside active receipt counts.
+* **Combined Search:** Works natively with the search bar for granular filtering.
+
+### 6. Enhanced Stats
+* **Monthly Tracking:** New "This Month" dedicated spending card.
+* **Averages:** Displays the average spend calculated per receipt.
+* **AI Integration:** Includes category breakdowns inside the AI summary response.
+
+---
+
+## 📊 UI Improvements
+
+* **Category Badges:** Visual color-coding for quick scanning (e.g., `cat-food`, `cat-transport`).
+* **Empty States:** Redesigned blank screens featuring helpful action icons.
+* **Skeleton Loading:** Smoother perceived performance during data fetching.
+* **Header Subtitle:** Dynamically displays the total receipt count.
+* **Period Labels:** Automatically updates to reflect your active filters.
+* **Keyboard Shortcut:** Press `Ctrl+K` or `Cmd+K` to instantly focus the search bar.
+* **Mobile Grid:** Enhanced responsive layouts tailored for smaller screens.
+
+
 # 📊 Edge AI Accounting Assistant
 
 An intelligent, privacy-first accounting assistant skill designed for the Google Edge AI Gallery. 
